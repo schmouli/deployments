@@ -1,0 +1,20 @@
+apiVersion: apps/v1
+kind: Deployment
+metadata:
+  name: chatbot-deploy
+spec:
+  replicas: 1
+  selector:
+    matchLabels:
+      app: chatbot-app
+  template:
+    metadata:
+      labels:
+        app: chatbot-app
+    spec:
+      containers:
+      - name: chatbot
+        image: localhost:5001/langchain-project-chatbot:latest
+        imagePullPolicy: Always
+        ports:
+        - containerPort: 8000

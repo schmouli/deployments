@@ -1,0 +1,100 @@
+# -------------------------
+# FastAPI Deployment & Service
+# -------------------------
+apiVersion: apps/v1
+kind: Deployment
+metadata:
+  name: fastapi-deploy
+spec:
+  replicas: 1
+  selector:
+    matchLabels:
+      app: fastapi-app
+  template:
+    metadata:
+      labels:
+        app: fastapi-app
+    spec:
+      containers:
+      - name: fastapi
+        image: localhost:5001/langchain-project-fastapi:latest
+        ports:
+        - containerPort: 8000
+---
+apiVersion: v1
+kind: Service
+metadata:
+  name: fastapi-svc
+spec:
+  selector:
+    app: fastapi-app
+  ports:
+  - protocol: TCP
+    port: 80
+    targetPort: 8000
+  type: ClusterIP
+# -------------------------
+# Chatbot Deployment & Service
+# -------------------------
+apiVersion: apps/v1
+kind: Deployment
+metadata:
+  name: chatbot-deploy
+spec:
+  replicas: 1
+  selector:
+    matchLabels:
+      app: chatbot-app
+  template:
+    metadata:
+      labels:
+        app: chatbot-app
+    spec:
+      containers:
+      - name: chatbot
+        image: localhost:5001/langchain-project-chatbot:latest
+        ports:
+        - containerPort: 8000
+---
+apiVersion: v1
+kind: Service
+metadata:
+  name: chatbot-svc
+spec:
+  selector:
+    app: chatbot-app
+  ports:
+  - protocol: TCP
+    port: 80
+    targetPort: 8000
+  type: ClusterIP
+# -------------------------
+# Ingress Routing by Host
+# -------------------------
+apiVersion: networking.k8s.io/v1
+kind: Ingress
+metadata:
+  name: langchain-project-ingress
+spec:
+  ingressClassName: nginx
+  rules:
+  - host: fastapi.local
+    http:
+      paths:
+      - path: /
+        pathType: Prefix
+        backend:
+          service:
+            name: fastapi-svc
+            port:
+              number: 80
+  - host: chatbot.local
+    http:
+      paths:
+      - path: /
+        pathType: Prefix
+        backend:
+          service:
+            name: chatbot-svc
+            port:
+              number: 80

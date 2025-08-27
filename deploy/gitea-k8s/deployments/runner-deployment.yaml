@@ -1,0 +1,38 @@
+apiVersion: apps/v1
+kind: Deployment
+metadata:
+  name: gitea-runner
+  namespace: gitea
+spec:
+  replicas: 1
+  selector:
+    matchLabels:
+      app: gitea-runner
+  template:
+    metadata:
+      labels:
+        app: gitea-runner
+    spec:
+      containers:
+      - name: runner
+        image: gitea/act_runner:latest
+        env:
+        - name: GITEA_INSTANCE_URL
+          value: "http://gitea-svc:80"   # use Service:PORT (not pod:3000)
+        - name: GITEA_RUNNER_REGISTRATION_TOKEN
+          valueFrom:
+            secretKeyRef:
+              name: gitea-runner-secret
+              key: runner-token
+        volumeMounts:
+        - name: runner-data
+          mountPath: /data
+        - name: docker-sock  # Add Docker socket mount
+          mountPath: /var/run/docker.sock
+      volumes:
+      - name: runner-data
+        emptyDir: {}
+      - name: docker-sock  # Add Docker socket volume
+        hostPath:
+          path: /var/run/docker.sock
+          type: Socket

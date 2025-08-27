@@ -1,0 +1,16 @@
+apiVersion: v1
+kind: ConfigMap
+metadata:
+  name: gitea-runner-config
+  namespace: gitea
+data:
+  config.yaml: |
+    log:
+      level: info
+    runner:
+      file: /data/gitea-runner/runner.db
+      capacity: 10
+    cache:
+      enabled: true
+      dir: /data/gitea-runner/cache
+      host: "runner-cache-service"

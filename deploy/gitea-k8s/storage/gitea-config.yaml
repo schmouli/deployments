@@ -1,0 +1,56 @@
+apiVersion: v1
+kind: ConfigMap
+metadata:
+  name: gitea-config
+  namespace: gitea
+data:
+  app.ini: |
+    APP_NAME = Gitea
+    RUN_MODE = prod
+
+    [server]
+    DOMAIN = gitea.local
+    HTTP_PORT = 3000
+    ROOT_URL = http://gitea.local:8080/
+    
+    [database]
+    DB_TYPE = sqlite3
+    PATH = /data/gitea/gitea.db
+    
+    [repository]
+    ROOT = /data/git/repositories
+    
+    [security]
+    INSTALL_LOCK = true
+    
+    [actions]
+    ENABLED = true
+    DEFAULT_ACTIONS_URL = http://gitea-svc.gitea.svc.cluster.local:80/api/v1/actions
+    
+    [repository.actions]
+    ENABLED = true
+    
+    [actions.runner]
+    ENABLED = true
+    COMMAND_ALLOWED_CMDS = *
+    FILE_PATTERNS = **
+    
+    [webhook]
+    ALLOWED_HOST_LIST = *
+---
+apiVersion: v1
+kind: ConfigMap
+metadata:
+  name: gitea-runner-config
+  namespace: gitea
+data:
+  config.yaml: |
+    log:
+      level: info
+    runner:
+      file: /data/gitea-runner/runner.db
+      capacity: 10
+    cache:
+      enabled: true
+      dir: /data/gitea-runner/cache
+      host: "runner-cache-service"

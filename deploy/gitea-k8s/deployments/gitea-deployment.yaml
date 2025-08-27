@@ -1,0 +1,35 @@
+apiVersion: apps/v1
+kind: Deployment
+metadata:
+  name: gitea
+  namespace: gitea
+spec:
+  replicas: 1
+  selector:
+    matchLabels:
+      app: gitea
+  template:
+    metadata:
+      labels:
+        app: gitea
+    spec:
+      securityContext:
+        fsGroup: 1000  # Ensures the volume is writable by the Gitea container
+      initContainers:
+      - name: fix-permissions
+        image: busybox
+        command: ["sh", "-c", "chown -R 1000:1000 /data"]
+        volumeMounts:
+        - name: gitea-data
+          mountPath: /data
+      containers:
+      - name: gitea
+        image: gitea/gitea:1.24.5
+        ports:
+        - containerPort: 3000
+        volumeMounts:
+        - name: gitea-data
+          mountPath: /data
+      volumes:
+      - name: gitea-data
+        emptyDir: {}  # Replace with your actual volume configuration (e.g., PersistentVolumeClaim)
