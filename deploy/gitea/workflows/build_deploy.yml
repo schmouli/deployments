@@ -1,0 +1,53 @@
+name: Build and Deploy
+on:
+  push:
+    branches: [ main ]
+  workflow_dispatch:  # Allows manual triggers
+
+jobs:
+  build:
+    runs-on: ubuntu-latest
+    steps:
+    - uses: actions/checkout@v3
+      with:
+        repository: myadmin/langchain-project  # Main application repo
+        ref: main
+    
+    - name: Set up Docker
+      run: |
+        docker ps || true
+        echo "Ensuring Docker is running..."
+    
+    - name: Build and push FastAPI image
+      env:
+        REGISTRY: localhost:5001
+        IMAGE_NAME: langchain-project-fastapi
+      run: |
+        docker build --build-arg START_SCRIPT=start-fastapi.sh -t $REGISTRY/$IMAGE_NAME:${{ github.sha }} .
+        docker push $REGISTRY/$IMAGE_NAME:${{ github.sha }}
+    
+    - name: Build and push Chatbot image
+      env:
+        REGISTRY: localhost:5001
+        IMAGE_NAME: langchain-project-chatbot
+      run: |
+        docker build --build-arg START_SCRIPT=start-chatbot.sh -t $REGISTRY/$IMAGE_NAME:${{ github.sha }} .
+        docker push $REGISTRY/$IMAGE_NAME:${{ github.sha }}
+    
+    - name: Checkout deployment configs
+      uses: actions/checkout@v3
+      with:
+        path: deploy
+    
+    - name: Deploy to Kind
+      run: |
+        cd deploy
+        kubectl apply -f app/
+        kubectl set image deployment/fastapi-deploy fastapi=localhost:5001/langchain-project-fastapi:${{ github.sha }}
+        kubectl set image deployment/chatbot-deploy chatbot=localhost:5001/langchain-project-chatbot:${{ github.sha }}
+    
+    - name: Verify deployment
+      run: |
+        kubectl get pods
+        kubectl wait --for=condition=ready pod -l app=fastapi-app --timeout=120s
+        kubectl wait --for=condition=ready pod -l app=chatbot-app --timeout=120s
