@@ -1,7 +1,7 @@
-// filepath: ~/gitea-deployments/README.md
+
 # Gitea Deployments
 
-Deployment configurations for Langchain project.
+Deployment configurations for Langchain/Agent project.
 
 ## Structure
 - `app/`: Application deployments
